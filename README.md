@@ -100,9 +100,25 @@ Keep the text data files in the same directory as the executable so the program 
 - Improve input validation and error handling.
 - Add a graphical user interface.
 
+##DECLARATION & CREDITS
+
+AI tools were used as supportive resources during the development of AttendWise, including assistance with file handling in C, preparation of the PowerPoint presentation, and generation of project flowcharts.
+
+File Handling: AI assistance was used to understand and implement file operations for saving and loading student, subject, and attendance data.
+
+PowerPoint Presentation: AI assistance was used to prepare, organise, and structure the presentation content.
+
+Flowcharts: AI tools were used to generate visual representations of the project's workflow.
+
+Project Development: The team worked on assembling, testing, and reviewing the project.
+
+Declaration: AI was used as an assistance tool during project development. Its contributions are acknowledged transparently.
+
 ## Author
 
-**Pragati Paliwal**
+**Pragati Paliwal** **590041234**
+**Harshit Pathania** **590039195**
+**Aditya Chauhan** **590036877**
 
 Developed as a mini hackathon project.
 
