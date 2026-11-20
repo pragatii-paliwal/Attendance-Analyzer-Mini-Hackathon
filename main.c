@@ -1,6 +1,6 @@
-
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <string.h>
 #define MAX_STUDENTS 100
 #define MAX_SUBJECTS 10
 struct Student {
@@ -12,14 +12,112 @@ struct Subject {
     int total;
     int present[MAX_STUDENTS];
 };
-
 struct Student students[MAX_STUDENTS];
 struct Subject subjects[MAX_SUBJECTS];
 int studentCount = 0, subjectCount = 0;
-
+void saveData() {
+    FILE *fp;
+    int i, j;
+    fp = fopen("students.txt", "w");
+    if (fp == NULL) {
+        printf("Could not save students.\n");
+        return;
+    }
+    for (i = 0; i < studentCount; i++) {
+        fprintf(fp, "%d|%s\n",
+                students[i].roll, students[i].name);
+    }
+    fclose(fp);
+    fp = fopen("subjects.txt", "w");
+    if (fp == NULL) {
+        printf("Could not save subjects.\n");
+        return;
+    }
+    for (i = 0; i < subjectCount; i++) {
+        fprintf(fp, "%s\n", subjects[i].name);
+    }
+    fclose(fp);
+    fp = fopen("attendance.txt", "w");
+if (fp == NULL) {
+        printf("Could not save attendance.\n");
+        return;
+    }
+    for (i = 0; i < subjectCount; i++) {
+        for (j = 0; j < studentCount; j++) {
+            fprintf(fp, "%d %d %d %d\n",
+                    i + 1,
+                    subjects[i].total,
+                    students[j].roll,
+                    subjects[i].present[j]);
+        } }
+fclose(fp);
+}
+void loadData() {
+    FILE *fp;
+    char line[100];
+    int subjectNo, total, roll, present;
+    int studentIndex;
+    fp = fopen("students.txt", "r");
+    if (fp == NULL) {
+        printf("students.txt not found. Starting with no students.\n");
+    } else {
+        while (fgets(line, sizeof(line), fp) != NULL &&
+               studentCount < MAX_STUDENTS) {
+            char *separator = strchr(line, '|');
+            if (separator == NULL) {
+                printf("Invalid student record: %s", line);
+                continue;
+            }
+            *separator = '\0';
+            students[studentCount].roll = atoi(line);
+            strcpy(students[studentCount].name,
+                   separator + 1);
+            students[studentCount].name[
+                strcspn(students[studentCount].name, "\r\n")
+            ] = '\0';
+            studentCount++;
+        }
+        fclose(fp);
+    }
+    fp = fopen("subjects.txt", "r");
+    if (fp != NULL) {
+        while (fgets(line, sizeof(line), fp) != NULL &&
+               subjectCount < MAX_SUBJECTS) {
+            line[strcspn(line, "\r\n")] = '\0';
+            if (line[0] == '\0') {
+                continue;
+            }
+            strcpy(subjects[subjectCount].name, line);
+            subjects[subjectCount].total = 0;
+            subjectCount++;
+        }
+        fclose(fp);
+    }
+    fp = fopen("attendance.txt", "r");
+    if (fp != NULL) {
+        while (fscanf(fp, "%d %d %d %d",
+                      &subjectNo, &total, &roll, &present) == 4) {
+            if (subjectNo < 1 || subjectNo > subjectCount) {
+                continue;
+            }
+            for (studentIndex = 0;
+                 studentIndex < studentCount;
+                 studentIndex++) {
+                if (students[studentIndex].roll == roll) {
+                    break;
+                }}
+            if (studentIndex == studentCount) {
+                continue;
+            }subjects[subjectNo - 1].total = total;
+            subjects[subjectNo - 1].present[studentIndex] = present;
+        }
+        fclose(fp);
+    }printf("Students loaded: %d\n", studentCount);
+    printf("Subjects loaded: %d\n", subjectCount);
+}
 void addStudent() {
     int roll, i;
-    if (studentCount == MAX_STUDENTS) {
+    if (studentCount >= MAX_STUDENTS) {
         printf("Student list is full.\n");
         return;
     }
@@ -40,22 +138,24 @@ void addStudent() {
         printf("Invalid name.\n");
         return;
     }
-
     studentCount++;
-    printf("Student added.\n");
+    saveData();
+    printf("Student added successfully.\n");
 }
 void viewStudents() {
     int i;
-
-    for (i = 0; i < studentCount; i++)
-        printf("%d | %s\n", students[i].roll, students[i].name);
-
-    if (studentCount == 0)
+    if (studentCount == 0) {
         printf("No students registered.\n");
-}
-
+        return;
+    }
+    printf("\n--- Student List ---\n");
+    for (i = 0; i < studentCount; i++) {
+        printf("%d | %s\n",
+               students[i].roll,
+               students[i].name);
+    }}
 void addSubject() {
-    if (subjectCount == MAX_SUBJECTS) {
+    if (subjectCount >= MAX_SUBJECTS) {
         printf("Subject limit reached.\n");
         return;
     }
@@ -66,19 +166,23 @@ void addSubject() {
     }
     subjects[subjectCount].total = 0;
     subjectCount++;
-    printf("Subject added.\n");
+    saveData();
+    printf("Subject added successfully.\n");
 }
 void viewSubjects() {
     int i;
-    for (i = 0; i < subjectCount; i++)
-        printf("%d. %s\n", i + 1, subjects[i].name);
-    if (subjectCount == 0)
+    if (subjectCount == 0) {
         printf("No subjects registered.\n");
-}
+        return;
+    }
+    printf("\n--- Subject List ---\n");
+    for (i = 0; i < subjectCount; i++) {
+        printf("%d. %s\n", i + 1, subjects[i].name);
+    }}
 float percentage(int present, int total) {
-    if (total == 0)
+    if (total == 0) {
         return 0;
-
+    }
     return present * 100.0f / total;
 }
 void markAttendance() {
@@ -98,33 +202,39 @@ void markAttendance() {
         printf("Invalid subject.\n");
         return;
     }
-    printf("Enter 1 for present, 0 for absent.\n");
-for (i = 0; i < studentCount; i++) {
-        printf("%s (%d): ", students[i].name, students[i].roll);
-
+    printf("Enter 1 for present and 0 for absent.\n");
+    for (i = 0; i < studentCount; i++) {
+        printf("%s (%d): ",
+               students[i].name,
+               students[i].roll);
         if (scanf("%d", &choice) != 1 ||
             (choice != 0 && choice != 1)) {
             printf("Invalid input. Please restart attendance marking.\n");
             while (getchar() != '\n');
             return;
         }
-
         subjects[id - 1].present[i] += choice;
     }
     subjects[id - 1].total++;
-    printf("Attendance recorded.\n");
+    saveData();
+    printf("Attendance recorded successfully.\n");
 }
 void attendanceReport() {
     int i, j;
-
+    if (subjectCount == 0) {
+        printf("Add a subject first.\n");
+        return;
+    }
+    if (studentCount == 0) {
+        printf("No students registered.\n");
+        return;
+    }
     for (j = 0; j < subjectCount; j++) {
-        printf("\n%s\n", subjects[j].name);
-
+        printf("\n--- %s ---\n", subjects[j].name);
         if (subjects[j].total == 0) {
             printf("No classes recorded.\n");
             continue;
         }
-
         for (i = 0; i < studentCount; i++) {
             printf("%s: %d/%d (%.2f%%)\n",
                    students[i].name,
@@ -132,13 +242,9 @@ void attendanceReport() {
                    subjects[j].total,
                    percentage(subjects[j].present[i],
                               subjects[j].total));
-        }}
-if (subjectCount == 0)
-        printf("Add a subject first.\n");
-}
+        }}}
 void findDefaulters() {
     int i, j, found = 0;
-
     for (j = 0; j < subjectCount; j++) {
         for (i = 0; i < studentCount; i++) {
             if (subjects[j].total > 0 &&
@@ -150,29 +256,25 @@ void findDefaulters() {
                        percentage(subjects[j].present[i],
                                   subjects[j].total));
                 found = 1;
-            }
-        }
-    }
-
-    if (!found)
+            } } }
+    if (!found) {
         printf("No students below 75%%, or no classes have been recorded.\n");
+    }
 }
 void attendanceCalculator() {
     int roll, id, i, present, total, needed = 0;
     float target, current;
-
     printf("Student roll number: ");
     if (scanf("%d", &roll) != 1) {
         printf("Invalid input.\n");
         while (getchar() != '\n');
         return;
     }
-
     for (i = 0; i < studentCount; i++) {
-        if (students[i].roll == roll)
+        if (students[i].roll == roll) {
             break;
+        }
     }
-
     if (i == studentCount) {
         printf("Student not found.\n");
         return;
@@ -189,7 +291,6 @@ void attendanceCalculator() {
         printf("Invalid subject or no classes recorded.\n");
         return;
     }
-
     printf("Target percentage (e.g. 75 or 80): ");
     if (scanf("%f", &target) != 1 ||
         target <= 0 || target > 100) {
@@ -197,33 +298,33 @@ void attendanceCalculator() {
         while (getchar() != '\n');
         return;
     }
-
     present = subjects[id - 1].present[i];
     total = subjects[id - 1].total;
     current = percentage(present, total);
     printf("Current attendance: %.2f%%\n", current);
     if (current >= target) {
-        int absences = (int)(present * 100.0 / target - total + 0.000001);
-
+        int absences =
+            (int)(present * 100.0 / target - total + 0.000001);
         printf("Target already reached.\n");
         printf("Maximum future absences: %d\n", absences);
         return;
     }
     if (target == 100) {
-        printf("Attend every future class to approach 100%%; exact 100%% is impossible after any past absence.\n");
+        printf("Attend every future class to approach 100%%.\n");
+        printf("Exact 100%% cannot be reached after a past absence.\n");
         return;
     }
-     while ((present + needed) * 100.0 <
+    while ((present + needed) * 100.0 <
            target * (total + needed)) {
         needed++;
     }
     printf("Attend the next %d classes consecutively to reach %.2f%%.\n",
            needed, target);
 }
-
+/* Main menu */
 int main() {
     int choice;
-
+    loadData();
     do {
         printf("\n======= ATTENDWISE =======\n");
         printf("1. Add Student\n");
@@ -236,7 +337,6 @@ int main() {
         printf("8. Smart Attendance Calculator\n");
         printf("9. Exit\n");
         printf("Choice: ");
-
         if (scanf("%d", &choice) != 1) {
             printf("Enter a number.\n");
             while (getchar() != '\n');
@@ -268,7 +368,8 @@ int main() {
                 attendanceCalculator();
                 break;
             case 9:
-                printf("Goodbye!\n");
+                saveData();
+                printf("Data saved. Goodbye!\n");
                 break;
             default:
                 printf("Invalid choice.\n");
